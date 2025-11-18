@@ -38,7 +38,7 @@ public struct ParticipantView: View {
             } else if let microphoneTrack = microphoneReference.resolve(), !microphoneTrack.isMuted,
                       let audioTrack = microphoneTrack.track as? AudioTrack
             {
-                BarAudioVisualizer(audioTrack: audioTrack, agentState: _participant.agentState).id(_participant.agentState)
+                BarAudioVisualizer(audioTrack: audioTrack, agentState: VisualizerAgentState(from: _participant.agentState)).id(_participant.agentState)
             } else {
                 _ui.noTrackView()
             }

@@ -25,7 +25,7 @@ public extension EnvironmentValues {
 #else
 private struct UIOptionsKey: EnvironmentKey {
     // This is the default value that SwiftUI will fallback to if you don't pass the object
-    public static var defaultValue: UIOptions = .init()
+    static var defaultValue: UIOptions = .init()
 }
 
 public extension EnvironmentValues {

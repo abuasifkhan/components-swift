@@ -76,7 +76,7 @@ class MetalOrbRenderer: NSObject, MTKViewDelegate {
 
     private var uniforms = OrbUniforms()
     private var randomOffsets: [Float] = []
-    private var currentAgentState: AgentState = .unknown
+    private var currentAgentState: VisualizerAgentState = .unknown
 
     // MARK: - Init
 
@@ -104,7 +104,7 @@ class MetalOrbRenderer: NSObject, MTKViewDelegate {
         uniforms.outputVolume = max(0, min(1, output))
     }
 
-    func updateAgentState(_ state: AgentState) {
+    func updateAgentState(_ state: VisualizerAgentState) {
         // No longer inverting colors for thinking state
         uniforms.inverted = 0
         currentAgentState = state
@@ -161,19 +161,17 @@ class MetalOrbRenderer: NSObject, MTKViewDelegate {
         // Try to load the Metal library from various sources
         var lib: MTLLibrary?
 
-        // First try the module bundle (for SwiftPM)
-        #if SWIFT_PACKAGE
-        lib = try? device.makeDefaultLibrary(bundle: Bundle.module)
-        #endif
+        // Try default library first (works when Metal files are properly compiled)
+        lib = device.makeDefaultLibrary()
+
+        // If that fails, try the class bundle
+        if lib == nil {
+            lib = try? device.makeDefaultLibrary(bundle: Bundle(for: type(of: self)))
+        }
 
         // If not found, try the main bundle
         if lib == nil {
             lib = try? device.makeDefaultLibrary(bundle: .main)
-        }
-
-        // If still not found, try to create default library
-        if lib == nil {
-            lib = device.makeDefaultLibrary()
         }
 
         guard let library = lib else {
@@ -205,7 +203,7 @@ struct _OrbPlatformView: NSViewRepresentable {
     var color2: Color
     var inputVolume: Float
     var outputVolume: Float
-    var agentState: AgentState
+    var agentState: VisualizerAgentState
 
     func makeNSView(context: Context) -> MTKView {
         let view = MTKView()
@@ -233,7 +231,7 @@ struct _OrbPlatformView: NSViewRepresentable {
     }
 
     final class Coordinator: MetalOrbRenderer {
-        func updateAll(color1: Color, color2: Color, input: Float, output: Float, state: AgentState) {
+        func updateAll(color1: Color, color2: Color, input: Float, output: Float, state: VisualizerAgentState) {
             updateColors(color1: color1, color2: color2)
             updateVolumes(input: input, output: output)
             updateAgentState(state)
@@ -246,7 +244,7 @@ struct _OrbPlatformView: UIViewRepresentable {
     var color2: Color
     var inputVolume: Float
     var outputVolume: Float
-    var agentState: AgentState
+    var agentState: VisualizerAgentState
 
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView()
@@ -274,7 +272,7 @@ struct _OrbPlatformView: UIViewRepresentable {
     }
 
     final class Coordinator: MetalOrbRenderer {
-        func updateAll(color1: Color, color2: Color, input: Float, output: Float, state: AgentState) {
+        func updateAll(color1: Color, color2: Color, input: Float, output: Float, state: VisualizerAgentState) {
             updateColors(color1: color1, color2: color2)
             updateVolumes(input: input, output: output)
             updateAgentState(state)
@@ -288,9 +286,9 @@ public struct Orb: View {
     public var color2: Color
     public var inputVolume: Float
     public var outputVolume: Float
-    public var agentState: AgentState
+    public var agentState: VisualizerAgentState
 
-    public init(color1: Color, color2: Color, inputVolume: Float, outputVolume: Float, agentState: AgentState = .unknown) {
+    public init(color1: Color, color2: Color, inputVolume: Float, outputVolume: Float, agentState: VisualizerAgentState = .unknown) {
         self.color1 = color1
         self.color2 = color2
         self.inputVolume = inputVolume
@@ -303,12 +301,12 @@ public struct Orb: View {
             let side = max(1, min(geo.size.width, geo.size.height))
 
             // Override input volume to 1.0 when thinking
-            let effectiveInputVolume = agentState == .thinking ? 1.0 : inputVolume
+            // (This line removed as per instructions)
 
             _OrbPlatformView(
                 color1: color1,
                 color2: color2,
-                inputVolume: effectiveInputVolume,
+                inputVolume: inputVolume,
                 outputVolume: outputVolume,
                 agentState: agentState
             )
@@ -335,7 +333,7 @@ public struct Orb: View {
 /// ```
 /// let inputTrack: AudioTrack = ...
 /// let outputTrack: AudioTrack = ...
-/// let agentState: AgentState = ...
+/// let agentState: VisualizerAgentState = ...
 /// OrbVisualizer(inputTrack: inputTrack, outputTrack: outputTrack, agentState: agentState)
 /// ```
 ///
@@ -352,13 +350,13 @@ public struct Orb: View {
 public struct OrbVisualizer: View {
     public let colors: (Color, Color)
 
-    private let agentState: AgentState
+    private let agentState: VisualizerAgentState
 
     @StateObject private var inputProcessor: AudioProcessor
     @StateObject private var outputProcessor: AudioProcessor
 
     public init(inputTrack: AudioTrack?, outputTrack: AudioTrack?,
-                agentState: AgentState = .unknown,
+                agentState: VisualizerAgentState = .unknown,
                 colors: (Color, Color) = (Color(red: 0.793, green: 0.863, blue: 0.988),
                                           Color(red: 0.627, green: 0.725, blue: 0.820)))
     {
@@ -373,8 +371,6 @@ public struct OrbVisualizer: View {
         GeometryReader { geometry in
             let inputVolume = aggregateVolume(from: inputProcessor.bands)
             let outputVolume = aggregateVolume(from: outputProcessor.bands)
-
-            let effectiveInputVolume = agentState == .thinking ? 1.0 : Float(inputVolume)
 
             Orb(color1: colors.0,
                 color2: colors.1,
@@ -423,7 +419,7 @@ public struct OrbVisualizer: View {
 struct OrbVisualizer_Previews: PreviewProvider {
     struct AnimatedOrbPreview: View {
         let isInput: Bool
-        let agentState: AgentState
+        let agentState: VisualizerAgentState
         let colors: (Color, Color)
 
         @State private var volume: Float = 0.0

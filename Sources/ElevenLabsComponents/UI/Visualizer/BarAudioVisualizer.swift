@@ -32,7 +32,7 @@ import SwiftUI
 /// Usage:
 /// ```
 /// let audioTrack: AudioTrack = ...
-/// let agentState: AgentState = ...
+/// let agentState: VisualizerAgentState = ...
 /// BarAudioVisualizer(audioTrack: audioTrack, agentState: agentState)
 /// ```
 ///
@@ -60,7 +60,7 @@ public struct BarAudioVisualizer: View {
     public let barMinOpacity: Double
     public let isCentered: Bool
 
-    private let agentState: AgentState
+    private let agentState: VisualizerAgentState
 
     @StateObject private var audioProcessor: AudioProcessor
 
@@ -69,7 +69,7 @@ public struct BarAudioVisualizer: View {
     @State private var animationTask: Task<Void, Never>?
 
     public init(audioTrack: AudioTrack?,
-                agentState: AgentState = .unknown,
+                agentState: VisualizerAgentState = .unknown,
                 barColor: Color = .primary,
                 barCount: Int = 5,
                 barCornerRadius: CGFloat = 100,
@@ -163,17 +163,17 @@ extension BarAudioVisualizer {
             self.barCount = barCount
         }
 
-        func duration(agentState: AgentState) -> TimeInterval {
+        func duration(agentState: VisualizerAgentState) -> TimeInterval {
             switch agentState {
             case .connecting, .initializing: 2 / Double(barCount)
             case .listening: 0.5
             case .thinking: 0.15
             case .speaking: veryLongDuration
-            default: veryLongDuration
+            case .unknown, .disconnected: veryLongDuration
             }
         }
 
-        func highlightingSequence(agentState: AgentState) -> [HighlightedBars] {
+        func highlightingSequence(agentState: VisualizerAgentState) -> [HighlightedBars] {
             switch agentState {
             case .connecting, .initializing: (0 ..< barCount).map { HighlightedBars([$0, barCount - 1 - $0]) }
             case .thinking: Array((0 ..< barCount) + (0 ..< barCount).reversed()).map { HighlightedBars([$0]) }
