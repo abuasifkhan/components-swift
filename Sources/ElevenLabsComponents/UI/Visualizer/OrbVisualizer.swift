@@ -161,8 +161,15 @@ class MetalOrbRenderer: NSObject, MTKViewDelegate {
         // Try to load the Metal library from various sources
         var lib: MTLLibrary?
 
-        // Try default library first (works when Metal files are properly compiled)
-        lib = device.makeDefaultLibrary()
+        // For Swift Package Manager, try Bundle.module first (contains package resources)
+        #if SWIFT_PACKAGE
+        lib = try? device.makeDefaultLibrary(bundle: Bundle.module)
+        #endif
+
+        // Try default library (works when Metal files are in the main target)
+        if lib == nil {
+            lib = device.makeDefaultLibrary()
+        }
 
         // If that fails, try the class bundle
         if lib == nil {
