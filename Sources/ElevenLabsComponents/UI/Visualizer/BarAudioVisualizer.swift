@@ -69,7 +69,7 @@ public struct BarAudioVisualizer: View {
     @State private var animationTask: Task<Void, Never>?
 
     public init(audioTrack: AudioTrack?,
-                agentState: VisualizerAgentState = .idle,
+                agentState: VisualizerAgentState = .unknown,
                 barColor: Color = .primary,
                 barCount: Int = 5,
                 barCornerRadius: CGFloat = 100,
@@ -165,7 +165,7 @@ extension BarAudioVisualizer {
 
         func duration(agentState: VisualizerAgentState) -> TimeInterval {
             switch agentState {
-            case .idle, .initializing: 2 / Double(barCount)
+            case .connecting, .initializing: 2 / Double(barCount)
             case .listening: 0.5
             case .thinking: 0.15
             case .speaking: veryLongDuration
@@ -175,10 +175,11 @@ extension BarAudioVisualizer {
 
         func highlightingSequence(agentState: VisualizerAgentState) -> [HighlightedBars] {
             switch agentState {
-            case .idle, .initializing: (0 ..< barCount).map { HighlightedBars([$0, barCount - 1 - $0]) }
+            case .connecting, .initializing: (0 ..< barCount).map { HighlightedBars([$0, barCount - 1 - $0]) }
             case .thinking: Array((0 ..< barCount) + (0 ..< barCount).reversed()).map { HighlightedBars([$0]) }
             case .listening: barCount % 2 == 0 ? [[(barCount / 2) - 1, barCount / 2], []] : [[barCount / 2], []]
-            case .speaking: [HighlightedBars(0 ..< barCount)]
+            case .speaking, .unknown: [HighlightedBars(0 ..< barCount)]
+            case .disconnected: [[]]
             }
         }
     }

@@ -76,7 +76,7 @@ class MetalOrbRenderer: NSObject, MTKViewDelegate {
 
     private var uniforms = OrbUniforms()
     private var randomOffsets: [Float] = []
-    private var currentAgentState: VisualizerAgentState = .idle
+    private var currentAgentState: VisualizerAgentState = .unknown
 
     // MARK: - Init
 
@@ -295,7 +295,7 @@ public struct Orb: View {
     public var outputVolume: Float
     public var agentState: VisualizerAgentState
 
-    public init(color1: Color, color2: Color, inputVolume: Float, outputVolume: Float, agentState: VisualizerAgentState = .idle) {
+    public init(color1: Color, color2: Color, inputVolume: Float, outputVolume: Float, agentState: VisualizerAgentState = .unknown) {
         self.color1 = color1
         self.color2 = color2
         self.inputVolume = inputVolume
@@ -363,7 +363,7 @@ public struct OrbVisualizer: View {
     @StateObject private var outputProcessor: AudioProcessor
 
     public init(inputTrack: AudioTrack?, outputTrack: AudioTrack?,
-                agentState: VisualizerAgentState = .idle,
+                agentState: VisualizerAgentState = .unknown,
                 colors: (Color, Color) = (Color(red: 0.793, green: 0.863, blue: 0.988),
                                           Color(red: 0.627, green: 0.725, blue: 0.820)))
     {
