@@ -40,12 +40,16 @@ public enum VisualizerAgentState: Sendable, Equatable {
     /// Initialize from SDK's AgentState, mapping simplified states to visualizer states
     public init(from sdkState: AgentState) {
         switch sdkState {
+        case .idle:
+            self = .unknown  // Map idle to unknown as fallback
+        case .initializing:
+            self = .initializing
         case .listening:
             self = .listening
         case .speaking:
             self = .speaking
-        @unknown default:
-            self = .unknown
+        case .thinking:
+            self = .thinking
         }
     }
 }
